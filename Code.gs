@@ -145,6 +145,10 @@ var addedEvents = [];
 var modifiedEvents = [];
 var removedEvents = [];
 
+function clearState(){
+  PropertiesService.getUserProperties().setProperty('LastRun', 0);
+}
+
 function startSync(){
   try{
   if (PropertiesService.getUserProperties().getProperty('LastRun') > 0 && (new Date().getTime() - PropertiesService.getUserProperties().getProperty('LastRun')) < 360000) {
