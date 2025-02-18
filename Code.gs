@@ -21,14 +21,19 @@
 *=========================================
 */
 
-var sourceCalendars = [                // The ics/ical urls that you want to get events from along with their target calendars (list a new row for each mapping of ICS url to Google Calendar)
-                                       // For instance: ["https://p24-calendars.icloud.com/holidays/us_en.ics", "US Holidays"]
-                                       // Or with colors following mapping https://developers.google.com/apps-script/reference/calendar/event-color,
-                                       // for instance: ["https://p24-calendars.icloud.com/holidays/us_en.ics", "US Holidays", "11"]
-  ["icsUrl1", "targetCalendar1"],
-  ["icsUrl2", "targetCalendar2"],
-  ["icsUrl3", "targetCalendar1"]
-
+var sourceCalendars = [                // The urls that you want to parse get events from, along with a regex for parsing them, and their target calendars (list a new row for each mapping)
+                                       // The regex should contain named groups for: event "dtstart" and "dtend" date (required), event "summary" (required), event "link" (optional), "description" and "location".
+                                       // If these fields cannot be captured by the regex, or they are in an invalid format, create formatters to reformat the data. Formatters are functions that can take the variables captured by the regex expression, and return desired value.
+  {
+    "src": "https://example-server.com/calendar/",
+    "trgt": "targetCalendarName1",
+    "regex": /<td[^>]*>(?<dtstart>\d{4}\.\d{2}\.\d{2})\.<\/td><td[^>]*>(?<type>[^<]+)<\/td><td[^>]*>(?<location>[^<]+)<\/td>/g,
+    "tz": "Europe/Budapest",
+    "formatters": {
+      "summary": () => "Overwritten Summary Text", // Generate uncaptured data
+      "dtstart": vars => vars.dtstart.replaceAll(/\.\s*/g, '-') // Fix date format (ISO)
+    }
+  }
 ];
 
 var howFrequent = 15;                     // What interval (minutes) to run this script on to check for new events.  Any integer can be used, but will be rounded up to 5, 10, 15, 30 or to the nearest hour after that.. 60, 120, etc. 1440 (24 hours) is the maximum value.  Anything above that will be replaced with 1440.
@@ -39,13 +44,9 @@ var removeEventsFromCalendar = true;      // If you turn this to "true", any eve
 var removePastEventsFromCalendar = false; // If you turn this to "false", any event that is in the past will not be removed.
 var addAlerts = "no";                     // Whether to add the ics/ical alerts as notifications on the Google Calendar events or revert to the calendar's default reminders ("yes", "no", "default").
 var addOrganizerToTitle = false;          // Whether to prefix the event name with the event organiser for further clarity
-var descriptionAsTitles = false;          // Whether to use the ics/ical descriptions as titles (true) or to use the normal titles as titles (false)
-var addCalToTitle = false;                // Whether to add the source calendar to title
-var addAttendees = false;                 // Whether to add the attendee list. If true, duplicate events will be automatically added to the attendees' calendar.
 var defaultAllDayReminder = -1;           // Default reminder for all day events in minutes before the day of the event (-1 = no reminder, the value has to be between 0 and 40320)
                                           // See https://github.com/derekantrican/GAS-ICS-Sync/issues/75 for why this is neccessary.
 var overrideVisibility = "";              // Changes the visibility of the event ("default", "public", "private", "confidential"). Anything else will revert to the class value of the ICAL event.
-var addTasks = false;
 
 var emailSummary = false;                 // Will email you when an event is added/modified/removed to your calendar
 var email = "";                           // OPTIONAL: If "emailSummary" is set to true or you want to receive update notifications, you will need to provide your email address
@@ -134,7 +135,7 @@ var startUpdateTime;
 // Per-calendar global variables (must be reset before processing each new calendar!)
 var calendarEvents = [];
 var calendarEventsIds = [];
-var icsEventsIds = [];
+var eventIds = [];
 var calendarEventsHashes = [];
 var recurringEvents = [];
 var targetCalendarId;
@@ -169,16 +170,16 @@ function startSync(){
     //------------------------ Reset globals ------------------------
     calendarEvents = [];
     calendarEventsIds = [];
-    icsEventsIds = [];
+    eventIds = [];
     calendarEventsHashes = [];
     recurringEvents = [];
 
     targetCalendarName = calendar[0];
-    var sourceCalendarURLs = calendar[1];
+    var sourceCalendarData = calendar[1];
     var vevents;
 
     //------------------------ Fetch URL items ------------------------
-    var responses = fetchSourceCalendars(sourceCalendarURLs);
+    var responses = fetchSourceData(sourceCalendarData);
     Logger.log("Syncing " + responses.length + " calendars to " + targetCalendarName);
 
     //------------------------ Get target calendar information------------------------
@@ -210,12 +211,12 @@ function startSync(){
         }
       }
 
-      //------------------------ Parse ical events --------------------------
-      vevents = parseResponses(responses, icsEventsIds);
+      //------------------------ Format downloaded events --------------------------
+      vevents = parseResponses(responses, eventIds);
       Logger.log("Parsed " + vevents.length + " events from ical sources");
     }
 
-    //------------------------ Process ical events ------------------------
+    //------------------------ Process downloaded events ------------------------
     if (addEventsToCalendar || modifyExistingEvents){
       Logger.log("Processing " + vevents.length + " events");
       var calendarTz =
@@ -237,11 +238,6 @@ function startSync(){
       Logger.log("Done checking events for removal");
     }
 
-    //------------------------ Process Tasks ------------------------
-    if (addTasks){
-      processTasks(responses);
-    }
-
     //------------------------ Add Recurring Event Instances ------------------------
     Logger.log("Processing " + recurringEvents.length + " Recurrence Instances!");
     for (var recEvent of recurringEvents){
@@ -253,6 +249,7 @@ function startSync(){
     sendSummary();
   }
   Logger.log("Sync finished!");
+  PropertiesService.getUserProperties().setProperty('LastRun', 0);
   }
   catch (e){
     throw e;
