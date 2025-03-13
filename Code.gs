@@ -22,6 +22,7 @@
 */
 
 var sourceCalendars = [                // The urls that you want to parse get events from, along with a regex for parsing them, and their target calendars (list a new row for each mapping)
+                                       // If the url is not serving its content in the utf-8 encoding, the "charset" variable can specify a different encoding.
                                        // The regex should contain named groups for: event "dtstart" and "dtend" date (required), event "summary" (required), event "link" (optional), "description" and "location".
                                        // If these fields cannot be captured by the regex, or they are in an invalid format, create formatters to reformat the data. Formatters are functions that can take the variables captured by the regex expression, and return desired value.
   {

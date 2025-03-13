@@ -136,7 +136,7 @@ function fetchSourceData(sourceCalendarData){
     callWithBackoff(function() {
       var urlResponse = UrlFetchApp.fetch(url);
       if (urlResponse.getResponseCode() == 200){
-        const text = urlResponse.getContentText();
+        const text = urlResponse.getContentText(data["charset"]);
         const events = Array.from(text.matchAll(regex), match => match.groups);
         if (!events)
           throw "Error: No events parsed from " + url;
