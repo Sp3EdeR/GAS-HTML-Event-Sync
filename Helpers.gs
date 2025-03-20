@@ -236,7 +236,7 @@ function parseResponses(responses){
       };
 
       if (data.colorId != undefined)
-        evt.addPropertyWithValue("color", colorId);
+        evt.addPropertyWithValue("color", data.colorId);
 
       return evt;
     }));
