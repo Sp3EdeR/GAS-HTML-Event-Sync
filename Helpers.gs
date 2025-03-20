@@ -124,8 +124,8 @@ function deleteAllTriggers(){
 /**
  * Gets the ressource from the specified URLs.
  *
- * @param {Array.string} sourceCalendarData - Object with "src" and "regex" fields
- * @return {Array.string} The ressources fetched from the specified URLs
+ * @param {Array.string} sourceCalendarData - Object with multiple fields to control fetching
+ * @return {Array.string} The resources fetched from the specified URLs
  */
 function fetchSourceData(sourceCalendarData){
   var result = []
