@@ -200,12 +200,10 @@ function parseResponses(responses){
     var resp = itm[0];
     const data = itm[1];
     const utcOffset = getTzUTCOffset(data.tz || "Etc/GMT");
-    const parseDate = (dateString, utcOffset, isEnd = false) => {
+    const parseDate = (dateString) => {
       var date = new ICAL.Time.fromString(dateString);
       if (date.icaltype != "date")
         return date.adjust(0,0,0,utcOffset).toString() + "Z";
-      if (isEnd)
-        date = date.adjust(1,0,0,0);
       return date;
     }
 
@@ -224,11 +222,20 @@ function parseResponses(responses){
         if (['dtstart', 'dtend'].includes(key)){
           var date = parseDate(value);
 
+          if (key == 'dtend' && date.icaltype == "date")
+            date.adjust(1,0,0,0); // end dates are open ended
+
           // Skip writing erroneous dtend
           if (key == 'dtend' && evt.hasProperty('dtstart')){
             eventStart = new ICAL.Time.fromString(evt.getFirstPropertyValue('dtstart').toString(), evt.getFirstProperty('dtstart'));
-            if (date < eventStart)
+            if (date < eventStart){
+              Logger.log("*** Warning: Early end date for event " + vars.summary);
               continue;
+            };
+            if (eventStart.icaltype != date.icaltype){
+              Logger.log("*** Warning: Mixed start-end date/time types for event " + vars.summary);
+              continue;
+            }
           }
           var value = date.toString();
         }
@@ -380,8 +387,10 @@ function createEvent(event, calendarTz){
         return Calendar.newEvent();
       }, defaultMaxRetries);
   if(icalEvent.startDate.isDate){ //All-day event
-    icalEvent.endDate.isDate = true;
-    icalEvent.endDate = icalEvent.endDate.adjust(1,0,0,0); // The end date is an open ended interval
+    if (icalEvent.startDate.compare(icalEvent.endDate) == 0){
+      //Adjust dtend in case dtstart equals dtend as this is not valid for allday events
+      icalEvent.endDate = icalEvent.endDate.adjust(1,0,0,0);
+    }
 
     newEvent = {
       start: { date : icalEvent.startDate.toString() },
