@@ -381,6 +381,7 @@ function createEvent(event, calendarTz){
     Logger.log("Skipping unchanged Event " + event.getFirstPropertyValue('uid').toString());
     return;
   }
+  calendarEventsHashes.push(digest); // Don't add events multiple times, if parsed multiple times
 
   var newEvent =
     callWithBackoff(function() {
