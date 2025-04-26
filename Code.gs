@@ -25,7 +25,9 @@ var sourceCalendars = [                // The urls that you want to parse get ev
                                        // If the url is not serving its content in the utf-8 encoding, the "charset" variable can specify a different encoding.
                                        // The "tz" configuration specifies a location to interpret the parsed times at. See the tzid.gs file for available time zones.
                                        // The regex should contain named groups for: event "dtstart" and "dtend" date (required), event "summary" (required), event "link" (optional), "description" and "location".
-                                       // If these fields cannot be captured by the regex, or they are in an invalid format, create formatters to reformat the data. Formatters are functions that can take the variables captured by the regex expression, and return desired value.
+                                       //   If the required fields cannot be captured by the regex, or they are in an invalid format, create formatters to reformat the data. Formatters are functions that can take the variables captured by the regex expression, and return desired value.
+                                       // The optional "postPayload" configuration can contain POST data in format: https://developers.google.com/apps-script/reference/url-fetch/url-fetch-app#fetchurl,-params.
+                                       // The optional "postContentType" configuration can be used when using postPayload.
   {
     "src": "https://example-server.com/calendar/",
     "trgt": "targetCalendarName1",

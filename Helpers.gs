@@ -132,9 +132,19 @@ function fetchSourceData(sourceCalendarData){
   for (var data of sourceCalendarData){
     const url = data["src"];
     const regex = data["regex"];
+    var params = undefined;
+    if ("postPayload" in data){
+      params = {
+        method: "post",
+        payload: data["postPayload"]
+      }
+      if ("postContentType" in data){
+        params["contentType"] = data["postContentType"]
+      }
+    }
     
     callWithBackoff(function() {
-      var urlResponse = UrlFetchApp.fetch(url);
+      var urlResponse = UrlFetchApp.fetch(url, params);
       if (urlResponse.getResponseCode() == 200){
         const text = urlResponse.getContentText(data["charset"]);
         const events = Array.from(text.matchAll(regex), match => match.groups);
