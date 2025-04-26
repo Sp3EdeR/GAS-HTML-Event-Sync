@@ -221,14 +221,13 @@ function parseResponses(responses){
     result.push(...resp.map(vars => {
       var evt = new ICAL.Component("vevent");
 
-      for (const key of ['dtstart', 'dtend', 'summary', 'location', 'description']) {
+      for (const key of ['dtstart', 'dtend', 'duration', 'summary', 'location', 'description']) {
         if (data.formatters[key])
           var value = data.formatters[key](vars);
         else if (key in vars)
           var value = vars[key];
         else
           continue;
-        // TODO: Add support for duration-based event lengths
         if (['dtstart', 'dtend'].includes(key)){
           var date = parseDate(value);
 
