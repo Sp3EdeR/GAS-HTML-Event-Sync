@@ -187,13 +187,15 @@ function setupTargetCalendar(targetCalendarName){
   return targetCalendar;
 }
 
-function getTzUTCOffset(tz){
+function isoStringToIcalTime(dateString, tz){
+  if (dateString.length <= 10) // Same date vs. time logic as in ical.js
+    return new ICAL.Time.fromString(dateString);
   if (tz in tzidreplace)
     tz = tzidreplace[tz];
-  let jsTime = new Date();
-  let utcTime = new Date(Utilities.formatDate(jsTime, "Etc/GMT", "HH:mm:ss MM/dd/yyyy"));
-  let tgtTime = new Date(Utilities.formatDate(jsTime, tz, "HH:mm:ss MM/dd/yyyy"));
-  return (tgtTime - utcTime)/-1000;
+
+  var date = new Date(dateString);
+  var localeDateString = date.toLocaleString('lt', { timeZone: tz }) // Lithuanians use ISO dates
+  return ICAL.Time.fromString(localeDateString);
 }
 
 /**
@@ -209,13 +211,6 @@ function parseResponses(responses){
   for (var itm of responses){
     var resp = itm[0];
     const data = itm[1];
-    const utcOffset = getTzUTCOffset(data.tz || "Etc/GMT");
-    const parseDate = (dateString) => {
-      var date = new ICAL.Time.fromString(dateString);
-      if (date.icaltype != "date")
-        return date.adjust(0,0,0,utcOffset).toString() + "Z";
-      return date;
-    }
 
     // Reformat parsed data into jCal (RFC 7265)
     result.push(...resp.map(vars => {
@@ -229,7 +224,7 @@ function parseResponses(responses){
         else
           continue;
         if (['dtstart', 'dtend'].includes(key)){
-          var date = parseDate(value);
+          var date = isoStringToIcalTime(value, data.tz || "Etc/GMT");
 
           if (key == 'dtend' && date.icaltype == "date")
             date.adjust(1,0,0,0); // end dates are open ended
