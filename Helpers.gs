@@ -231,7 +231,7 @@ function parseResponses(responses){
 
           // Skip writing erroneous dtend
           if (key == 'dtend' && evt.hasProperty('dtstart')){
-            eventStart = new ICAL.Time.fromString(evt.getFirstPropertyValue('dtstart').toString(), evt.getFirstProperty('dtstart'));
+            var eventStart = new ICAL.Time.fromString(evt.getFirstPropertyValue('dtstart').toString(), evt.getFirstProperty('dtstart'));
             if (date < eventStart){
               Logger.log("*** Warning: Early end date for event " + vars.summary);
               continue;
