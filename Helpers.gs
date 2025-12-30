@@ -150,8 +150,8 @@ function fetchSourceData(sourceCalendarData){
         if ("preprocessor" in data)
           text = data["preprocessor"](text);
         const events = Array.from(text.matchAll(regex), match => match.groups);
-        if (!events)
-          throw "Error: No events parsed from " + url;
+        if (events.length == 0)
+          console.log("*** Warning: No events parsed from " + url);
         result.push([events, data]);
         return; 
       }
