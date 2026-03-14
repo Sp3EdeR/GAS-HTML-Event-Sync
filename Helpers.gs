@@ -127,6 +127,7 @@ function deleteAllTriggers(){
  * @param {Array.string} sourceCalendarData - Object with multiple fields to control fetching
  * @return {Array.string} The resources fetched from the specified URLs
  */
+var sourceCache = {};
 function fetchSourceData(sourceCalendarData){
   var result = []
   for (var data of sourceCalendarData){
@@ -144,20 +145,34 @@ function fetchSourceData(sourceCalendarData){
     }
     
     callWithBackoff(function() {
-      var urlResponse = UrlFetchApp.fetch(url, params);
-      if (urlResponse.getResponseCode() == 200){
-        var text = urlResponse.getContentText(data["charset"]);
+      const textToEvents = text => {
         if ("preprocessor" in data)
           text = data["preprocessor"](text);
         const events = Array.from(text.matchAll(regex), match => match.groups);
         if (events.length == 0)
           console.log("*** Warning: No events parsed from " + url);
-        result.push([events, data]);
-        return; 
+        return events;
       }
-      else{ //Throw here to make callWithBackoff run again
-        throw "Error: Encountered HTTP error " + urlResponse.getResponseCode() + " when accessing " + url; 
+
+      var text = "";
+      if (url in sourceCache)
+        text = sourceCache[url];
+      else{
+        var urlResponse = UrlFetchApp.fetch(url, params);
+        if (urlResponse.getResponseCode() == 200){
+          text = urlResponse.getContentText(data["charset"]);
+          sourceCache[url] = text;
+        }
+        else{ //Throw here to make callWithBackoff run again
+          throw "Error: Encountered HTTP error " + urlResponse.getResponseCode() + " when accessing " + url; 
+        }
       }
+      if ("preprocessor" in data)
+        text = data["preprocessor"](text);
+      const events = Array.from(text.matchAll(regex), match => match.groups);
+      if (events.length == 0)
+        console.log("*** Warning: No events parsed from " + url);
+      result.push([events, data]);
     }, defaultMaxRetries);
   }
   
