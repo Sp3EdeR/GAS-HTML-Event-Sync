@@ -257,6 +257,12 @@ function parseResponses(responses){
               Logger.log("*** Warning: Mixed start-end date/time types for event " + vars.summary);
               continue;
             }
+            const weekAfter = eventStart.clone();
+            weekAfter.adjust(7,0,0,0);
+            if (weekAfter < date){
+              Logger.log("*** Warning: Dropping end date for very long event " + vars.summary)
+              continue;
+            }
           }
           var value = date.toString();
         }
