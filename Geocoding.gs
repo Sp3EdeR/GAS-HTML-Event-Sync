@@ -19,7 +19,7 @@ function updateGeocoding(events) {
   var now = Date.now();
   events.forEach(function(event) {
     // Calculate the last use of the location; it can be deleted afterwards
-    var end = getGeocodingEventEnd_(event);
+    var end = getEventEnd(event);
     if (end == null || end < now)
       return;
     var location = (event.location || "").trim();
@@ -28,7 +28,7 @@ function updateGeocoding(events) {
   });
 
   var locations = Object.keys(latestByLocation);
-  var sheet = getGeocodingSheet_();
+  var sheet = getMetadataSheet(sheetName, "geocoding", geocodingHeaders);
   var oldRowCount = sheet.getLastRow();
 
   // Load existing sheet data
@@ -99,44 +99,6 @@ function updateGeocoding(events) {
 }
 
 /**
- * Opens or creates the spreadsheet and geocoding sheet.
- *
- * @return {GoogleAppsScript.Spreadsheet.Sheet} The initialized geocoding sheet.
- */
-function getGeocodingSheet_() {
-  var properties = PropertiesService.getScriptProperties();
-  var spreadsheet;
-  var spreadsheetId = properties.getProperty("GEOCODING_SPREADSHEET_ID");
-  try {
-    if (spreadsheetId)
-      spreadsheet = SpreadsheetApp.openById(spreadsheetId);
-  } catch (error) {
-    properties.deleteProperty("GEOCODING_SPREADSHEET_ID");
-  }
-
-  if (!spreadsheet) {
-    var files = DriveApp.getFilesByName(sheetName);
-    while (files.hasNext() && !spreadsheet) {
-      var file = files.next();
-      if (file.getMimeType() == MimeType.GOOGLE_SHEETS)
-        spreadsheet = SpreadsheetApp.openById(file.getId());
-    }
-    spreadsheet = spreadsheet || SpreadsheetApp.create(sheetName);
-    properties.setProperty("GEOCODING_SPREADSHEET_ID", spreadsheet.getId());
-  }
-
-  var sheet = spreadsheet.getSheetByName("geocoding");
-  if (!sheet)
-    sheet = spreadsheet.getSheets().length == 1 && spreadsheet.getSheets()[0].getLastRow() == 0
-      ? spreadsheet.getSheets()[0].setName("geocoding") : spreadsheet.insertSheet("geocoding");
-  if (sheet.getLastRow() == 0) {
-    sheet.getRange(1, 1, 1, geocodingHeaders.length).setValues([geocodingHeaders]);
-    sheet.setFrozenRows(1);
-  }
-  return sheet;
-}
-
-/**
  * Resolves locations with the built-in Apps Script Maps service.
  *
  * @param {Array<string>} locations Location strings to resolve.
@@ -164,30 +126,4 @@ function geocodeLocations_(locations) {
       return undefined;
     }
   });
-}
-
-/**
- * Converts a Calendar event's end value to UTC epoch milliseconds.
- *
- * @param {Calendar.Event} event A Google Calendar event.
- * @return {?number} UTC milliseconds, or null for a missing/invalid end.
- */
-function getGeocodingEventEnd_(event) {
-  var end = event.end || {};
-  var value = end.dateTime || end.date;
-  if (value) {
-    var milliseconds = new Date(value).getTime();
-    return isNaN(milliseconds) ? null : milliseconds;
-  }
-
-  var start = event.start || {};
-  if (start.dateTime) {
-    var startMilliseconds = new Date(start.dateTime).getTime();
-    return isNaN(startMilliseconds) ? null : startMilliseconds + 3 * 60 * 60 * 1000;
-  }
-  if (start.date) {
-    var startDateMilliseconds = new Date(start.date).getTime();
-    return isNaN(startDateMilliseconds) ? null : startDateMilliseconds + 24 * 60 * 60 * 1000;
-  }
-  return null;
 }
