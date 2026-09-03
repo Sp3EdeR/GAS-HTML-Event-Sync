@@ -147,7 +147,7 @@ function fetchSourceData(sourceCalendarData){
     callWithBackoff(function() {
       const textToEvents = text => {
         if ("preprocessor" in data)
-          text = data["preprocessor"](text);
+          text = data["preprocessor"](text, url);
         const events = Array.from(text.matchAll(regex), match => match.groups);
         if (events.length == 0)
           console.log("*** Warning: No events parsed from " + url);
@@ -168,7 +168,7 @@ function fetchSourceData(sourceCalendarData){
         }
       }
       if ("preprocessor" in data)
-        text = data["preprocessor"](text);
+        text = data["preprocessor"](text, url);
       const events = Array.from(text.matchAll(regex), match => match.groups);
       if (events.length == 0)
         console.log("*** Warning: No events parsed from " + url);
