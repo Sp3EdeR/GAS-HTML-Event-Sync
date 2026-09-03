@@ -233,7 +233,7 @@ function parseResponses(responses){
     result.push(...resp.map(vars => {
       var evt = new ICAL.Component("vevent");
 
-      for (const key of ['dtstart', 'dtend', 'duration', 'summary', 'location', 'description']) {
+      for (const key of ['uid', 'dtstart', 'dtend', 'duration', 'summary', 'location', 'description']) {
         if (data.formatters[key])
           var value = data.formatters[key](vars);
         else if (key in vars)
@@ -260,7 +260,8 @@ function parseResponses(responses){
           }
           var value = date.toString();
         }
-        evt.addPropertyWithValue(key, value);
+        if (value != undefined)
+          evt.addPropertyWithValue(key, value);
       };
 
       if (data.colorId != undefined)
