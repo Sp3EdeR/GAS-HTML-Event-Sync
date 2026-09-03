@@ -267,6 +267,9 @@ function parseResponses(responses){
       if (data.colorId != undefined)
         evt.addPropertyWithValue("color", data.colorId);
 
+      if (data.finalizeEvent)
+        data.finalizeEvent(evt);
+
       return evt;
     }));
   }
@@ -323,6 +326,9 @@ function parseResponses(responses){
  * @param {string} calendarTz - The timezone of the target calendar
  */
 function processEvent(event, calendarTz){
+  if (event.skipProcessing)
+    return;
+
   //------------------------ Create the event object ------------------------
   var newEvent = createEvent(event, calendarTz);
   if (newEvent == null)

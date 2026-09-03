@@ -29,6 +29,7 @@ var sourceCalendars = [                // The urls that you want to parse get ev
                                        //   If the required fields cannot be captured by the regex, or they are in an invalid format, create formatters to reformat the data. Formatters are functions that can take the variables captured by the regex expression, and return desired value.
                                        // The optional "postPayload" configuration can contain POST data in format: https://developers.google.com/apps-script/reference/url-fetch/url-fetch-app#fetchurl,-params.
                                        // The optional "postContentType" configuration can be used when using postPayload.
+                                       // The optional "finalizeEvent" configuration can modify parsed ical events right after parsing.
   {
     "src": "https://example-server.com/calendar/",
     "trgt": "targetCalendarName1",
