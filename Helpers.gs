@@ -142,6 +142,9 @@ function fetchSourceData(sourceCalendarData){
       if ("postContentType" in data){
         params["contentType"] = data["postContentType"]
       }
+      if ("headers" in data){
+        params["headers"] = data["headers"]
+      }
     }
     
     callWithBackoff(function() {
