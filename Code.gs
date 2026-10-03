@@ -257,6 +257,7 @@ function startSync(){
   }
 
   updateMetadata(metadataEventsByCalendar);
+  updateDataCache(metadataEventsByCalendar);
   updateGeocoding(geocodingEvents);
   if ((addedEvents.length + modifiedEvents.length + removedEvents.length) > 0 && emailSummary){
     sendSummary();
