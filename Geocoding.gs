@@ -53,7 +53,8 @@ function updateGeocoding(events) {
   // Update the last use of each location
   locations.forEach(function(location) {
     var row = rows[rowByLocation[location]];
-    row[3] = Math.max(Number(row[3]) || 0, latestByLocation[location]);
+    if (row[3] !== "")
+      row[3] = Math.max(Number(row[3]) || 0, latestByLocation[location]);
   });
 
   // Delete rows that are no longer used
